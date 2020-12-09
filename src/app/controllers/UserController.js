@@ -25,10 +25,31 @@ module.exports = {
     },
 
     async update(req, res){
-        //all fields
+        try{
+            const { user } = req;
+            let { name, email, cpf_cnpj, cep, address } = req.body;
 
-        //has password
+            cpf_cnpj = cpf_cnpj.replace(/\D/g, '');
+            cep = cep.replace(/\D/g, '');
 
-        //password match
+            await User.update(user.id, {
+                name,
+                email,
+                cpf_cnpj,
+                cep,
+                address
+            });
+
+            return res.render('user/index', {
+                user: req.body,
+                success: 'Eba, seus dados foram atualizados com sucesso!'
+            });
+
+        }catch(err){
+            console.error(err);
+            return res.render('user/index', { 
+                error: 'Ops, parece que algo deu errado!'
+            });
+        }
     }
 }

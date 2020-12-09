@@ -65,7 +65,7 @@ async function update(req, res, next){
         return res.render('user/index', fillAllFields);
     }
 
-    const { id, pasword } = req.body;
+    const { id, password } = req.body;
 
     if(!password) return res.render('user/index', {
         user: req.body,
