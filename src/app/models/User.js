@@ -1,15 +1,13 @@
-const db = require('../../config/db');
-const { hash } = require('bcryptjs');
-const fs = require('fs');
-
-const Product = require('../models/Product');
 const Base = require('./Base');
 
-Base.init({ table:users });
+Base.init({ table: 'users' });
 
 module.exports = {
     ...Base,
-    // async create(data){
+    
+}
+
+// async create(data){
     //     try{
     //         const query = `
     //             INSERT INTO users (
@@ -43,50 +41,49 @@ module.exports = {
     //     }
     // },
 
-    async update(id, fields){
-        let query = 'UPDATE users SET';
+    // async update(id, fields){
+    //     let query = 'UPDATE users SET';
 
-        Object.keys(fields).map((key, index, array) => {
-            if((index + 1) < array.length){
-                query = `${query}
-                    ${key} = '${fields[key]}',
-                `
-            }else{
-                //last interation
-                query = `${query}
-                    ${key} = '${fields[key]}'
-                    WHERE id = ${id}
-                `
-            }
-        });
+    //     Object.keys(fields).map((key, index, array) => {
+    //         if((index + 1) < array.length){
+    //             query = `${query}
+    //                 ${key} = '${fields[key]}',
+    //             `
+    //         }else{
+    //             //last interation
+    //             query = `${query}
+    //                 ${key} = '${fields[key]}'
+    //                 WHERE id = ${id}
+    //             `
+    //         }
+    //     });
 
-        await db.query(query);
-        return;
-    },
+    //     await db.query(query);
+    //     return;
+    // },
 
-    async delete(id){
-        //pegar todos os produtos
-        let results = await db.query('SELECT * FROM products WHERE user_id = $1', [id]);
-        const products = results.rows;
+    // async delete(id){
+    //     //pegar todos os produtos
+    //     let results = await db.query('SELECT * FROM products WHERE user_id = $1', [id]);
+    //     const products = results.rows;
 
-        //dos produtos, pegar todas as imagens
-        const allFilesPromise = products.map(product =>
-            Product.files(product.id));
+    //     //dos produtos, pegar todas as imagens
+    //     const allFilesPromise = products.map(product =>
+    //         Product.files(product.id));
 
-        let promiseResults = await Promise.all(allFilesPromise);
+    //     let promiseResults = await Promise.all(allFilesPromise);
 
-        //rodar a remoção do usuário
-        await db.query('DELETE FROM users WHERE id = $1', [id]);
+    //     //rodar a remoção do usuário
+    //     await db.query('DELETE FROM users WHERE id = $1', [id]);
 
-        //remover as imagens da pasta public
-        promiseResults.map(results => {
-            results.rows.map(file => {
-                try{
-                    fs.unlinkSync(file.path)
-                }catch(err){
-                    console.error(err);
-                }
-            });
-        });
-    }
-}
+    //     //remover as imagens da pasta public
+    //     promiseResults.map(results => {
+    //         results.rows.map(file => {
+    //             try{
+    //                 fs.unlinkSync(file.path)
+    //             }catch(err){
+    //                 console.error(err);
+    //             }
+    //         });
+    //     });
+    // }
