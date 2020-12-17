@@ -1,4 +1,9 @@
+const { unlinkSync } = require('fs');
+const { hash } = require('bcryptjs');
+
 const User = require('../models/User');
+const Product = require('../models/Product');
+
 const { formatCpfCnpj, formatCep } = require('../../lib/utils');
 
 module.exports = {
@@ -7,21 +12,44 @@ module.exports = {
     },
 
     async show(req, res){
-        const { user } = req;
+        try{
+            const { user } = req;
 
-        user.cpf_cnpj = formatCpfCnpj(user.cpf_cnpj);
-        user.cep = formatCep(user.cep);
+            user.cpf_cnpj = formatCpfCnpj(user.cpf_cnpj);
+            user.cep = formatCep(user.cep);
 
-        return res.render('user/index', { user });
+            return res.render('user/index', { user });
+            
+        }catch(err){
+            console.error(err);
+        }
     },
 
     async post(req, res){
 
-        const userId = await User.create(req.body);
+        try{
+            let { name, email, password, cpf_cnpj, cep, address } = req.body;
 
-        req.session.userId = userId;
+            password = await hash(password, 8);
+            cpf_cnpj = cpf_cnpj.replace(/\D/g, '');
+            cep = cep.replace(/\D/g, '');
 
-        return res.redirect('/users');
+            const userId = await User.create({
+                name,
+                email,
+                password,
+                cpf_cnpj,
+                cep,
+                address
+            });
+
+            req.session.userId = userId;
+
+            return res.redirect('/users');
+            
+        }catch(err){
+            console.error(err);
+        }
     },
 
     async update(req, res){
@@ -55,8 +83,28 @@ module.exports = {
 
     async delete(req, res){
         try{
+            const products = await Product.findAll({ where: { user_id: req.body.id } });
+
+            //dos produtos, pegar todas as imagens
+            const allFilesPromise = products.map(product =>
+                Product.files(product.id));
+
+            let promiseResults = await Promise.all(allFilesPromise);
+
+            //rodar a remoção do usuário
             await User.delete(req.body.id);
             req.session.destroy();
+
+            //remover as imagens da pasta public
+            promiseResults.map(results => {
+                results.rows.map(file => {
+                    try{
+                        unlinkSync(file.path)
+                    }catch(err){
+                        console.error(err);
+                    }
+                });
+            });
 
             return res.render('session/login', {
                 succes: 'Conta deletada com sucesso!'
